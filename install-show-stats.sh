@@ -6,7 +6,12 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [ "$1" == "clean" ]; then
-  mdmmgr=`grep "#mdmmgr" /usr/local/bin/show-stats.sh | cut -d' '-f2`
+  mdmmgr=`grep "#mdmmgr" /usr/local/bin/show-stats.sh | cut -d' ' -f2`
+  svc=`systemctl is-active show-stats`
+  if [ "$svc" = "active" ]; then
+    echo Stopping show-stats service...
+    systemctl stop show-stats
+  fi
   echo Removing generated files...
   rm -f /etc/systemd/system/show-stats.service
   rm -f /usr/local/bin/show-stats.sh
@@ -44,6 +49,7 @@ fi
 
 # Check if ModemManager is enabled
 mdmmgr=`systemctl is-enabled ModemManager`
+echo Service ModemManager is $mdmmgr
 
 echo Generating service file...
 cat > /etc/systemd/system/show-stats.service <<EOF
@@ -93,10 +99,11 @@ while [ -c /dev/ttyACM0 ]; do
   sleep 2
 done
 
-#mdmmgr $mdmmgr
 EOF
 
 
+# Leave marker for ModemManager
+echo "#mdmmgr $mdmmgr" >> /usr/local/bin/show-stats.sh
 
 echo Generating udev rules...
 sysctl=`which systemctl`
