@@ -1,20 +1,23 @@
 #!/bin/bash
 
+scriptfile=/usr/local/bin/show-stats.sh
+svcfile=/etc/systemd/system/show-stats.service
+
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 
    exit 1
 fi
 
 if [ "$1" == "clean" ]; then
-  mdmmgr=`grep "#mdmmgr" /usr/local/bin/show-stats.sh | cut -d' ' -f2`
+  mdmmgr=`grep "#mdmmgr" $scriptfile | cut -d' ' -f2`
   svc=`systemctl is-active show-stats`
   if [ "$svc" = "active" ]; then
     echo Stopping show-stats service...
     systemctl stop show-stats
   fi
   echo Removing generated files...
-  rm -f /etc/systemd/system/show-stats.service
-  rm -f /usr/local/bin/show-stats.sh
+  rm -f $svcfile
+  rm -f $scriptfile
   rm -f /etc/udev/rules.d/10-local.rules
   rm -f /etc/udev/rules.d/99-ttyacms.rules
   if [ "$mdmmgr" = "enabled" ]; then
@@ -27,13 +30,13 @@ if [ "$1" == "clean" ]; then
   exit
 fi
 
-if [ -f /etc/systemd/system/show-stats.service ]; then
-  echo /etc/systemd/system/show-stats.service file exists -- Exiting
+if [ -f $svcfile ]; then
+  echo $svcfile file exists -- Exiting
   exit
 fi
 
-if [ -f /usr/local/bin/show-stats.sh ]; then
-  echo /usr/local/bin/show-stats.sh file exists -- Exiting
+if [ -f $scriptfile ]; then
+  echo $scriptfile file exists -- Exiting
   exit
 fi
 
@@ -52,19 +55,19 @@ mdmmgr=`systemctl is-enabled ModemManager`
 echo Service ModemManager is $mdmmgr
 
 echo Generating service file...
-cat > /etc/systemd/system/show-stats.service <<EOF
+cat > $svcfile <<EOF
 [Unit]
 Description=Monitor ODROID XU4 stats
 BindsTo=dev-ttyACM0.device
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/show-stats.sh
+ExecStart=$scriptfile
 EOF
 
 
 echo Generating show-stats script...
-cat > /usr/local/bin/show-stats.sh <<\EOF
+cat > $scriptfile <<\EOF
 #!/bin/bash
 
 eth=eth
@@ -103,7 +106,7 @@ EOF
 
 
 # Leave marker for ModemManager
-echo "#mdmmgr $mdmmgr" >> /usr/local/bin/show-stats.sh
+echo "#mdmmgr $mdmmgr" >> $scriptfile
 
 echo Generating udev rules...
 sysctl=`which systemctl`
@@ -116,7 +119,7 @@ ATTRS{idVendor}=="239a" ATTRS{idProduct}=="0001", ENV{ID_MM_DEVICE_IGNORE}="1"
 EOF
 
 
-chmod +x /usr/local/bin/show-stats.sh
+chmod +x $scriptfile
 
 if [ "$mdmmgr" = "enabled" ]; then
   echo Disabling ModemManager service...
