@@ -80,26 +80,33 @@ fi
 
 sleep 1
 
-#echo $(hostname -I) > /dev/ttyACM0
-
 # clear screen
 printf '\xFE\x58' > /dev/ttyACM0 
 # background color
 printf '\xFE\xD0\xFF\x80\xFF' > /dev/ttyACM0
 
-ip=`echo $(ip -o -4 a | grep $eth | awk '{ gsub(/\/.*/, "", $4); print $4 }')`
-if [ "$ip" = "" ]; then
-  ip=`echo $(ip -o -4 a | grep $wlan | awk '{ gsub(/\/.*/, "", $4); print $4 }')`
-fi
-
-echo $ip  > /dev/ttyACM0
-
+loop=0
 while [ -c /dev/ttyACM0 ]; do
-# Position cursor at 2nd line
-  printf '\xFE\x47\x1\x2' > /dev/ttyACM0
-# Gather CPU activity for the past 2 seconds
-  top -b -n2 | grep "Cpu(s)" | awk '{print "CPU: " $2+$4 "%  "}' | tail -n1 > /dev/ttyACM0
-  sleep 2
+  while [ $loop -lt 9 ]; do
+    # Position cursor at 1st line
+    printf '\xFE\x47\x1\x1' > /dev/ttyACM0
+    if [ $(( $loop % 3)) -eq 0 ];then
+      echo `hostname` > /dev/ttyACM0
+    else
+      ip=`echo $(ip -o -4 a | grep $eth | awk '{ gsub(/\/.*/, "", $4); print $4 }')`
+      if [ "$ip" = "" ]; then
+        ip=`echo $(ip -o -4 a | grep $wlan | awk '{ gsub(/\/.*/, "", $4); print $4 }')`
+      fi
+      echo $ip  > /dev/ttyACM0
+    fi
+    # Position cursor at 2nd line
+    printf '\xFE\x47\x1\x2' > /dev/ttyACM0
+    # Gather CPU activity for the past 2 seconds
+    top -b -n2 | grep "Cpu(s)" | awk '{print "CPU: " $2+$4 "%  "}' | tail -n1 > /dev/ttyACM0
+    sleep 2
+    let loop+=1
+  done
+  let loop=0
 done
 
 EOF
