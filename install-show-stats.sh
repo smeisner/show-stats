@@ -78,6 +78,11 @@ if [ -f /etc/redhat-release ]; then
   wlan=wlp
 fi
 
+if [ -f /etc/armbian-release ]; then
+  eth=enx
+  wlan=wlp
+fi
+
 sleep 1
 
 # clear screen
