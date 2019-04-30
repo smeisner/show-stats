@@ -9,8 +9,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [ "$1" == "clean" ]; then
-  mdmmgr=`grep "#mdmmgr" $scriptfile | cut -d' ' -f2`
-  svc=`systemctl is-active show-stats`
+  mdmmgr=$(grep "#mdmmgr" $scriptfile | cut -d' ' -f2)
+  svc=$(systemctl is-active show-stats)
   if [ "$svc" = "active" ]; then
     echo Stopping show-stats service...
     systemctl stop show-stats
@@ -51,8 +51,8 @@ if [ -f /etc/udev/rules.d/99-ttyacms.rules ]; then
 fi
 
 # Check if ModemManager is enabled
-mdmmgr=`systemctl is-enabled ModemManager`
-echo Service ModemManager is $mdmmgr
+mdmmgr=$(systemctl is-enabled ModemManager)
+echo Service ModemManager is "$mdmmgr"
 
 echo Generating service file...
 cat > $svcfile <<EOF
@@ -121,7 +121,7 @@ EOF
 echo "#mdmmgr $mdmmgr" >> $scriptfile
 
 echo Generating udev rules...
-sysctl=`which systemctl`
+sysctl=$(command -v systemctl)
 cat > /etc/udev/rules.d/10-local.rules <<EOF
 SUBSYSTEMS=="usb", ACTION=="add", ATTRS{product}=="Adafruit Industries", GROUP="users", RUN+="${sysctl} --no-block start show-stats.service"
 EOF
@@ -141,4 +141,3 @@ fi
 echo Reloading systemctl and udev rules...
 systemctl daemon-reload
 udevadm control --reload
-
